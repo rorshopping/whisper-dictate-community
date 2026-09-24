@@ -11,6 +11,13 @@ The repository contains a guarded GitHub Actions release workflow. It is designe
 5. Review `MODEL_LICENSES.md`, `THIRD-PARTY-NOTICES.md`, the SBOM, and the model revisions.
 6. Confirm the website `releases.json` points to the final tag and checksums.
 
+## Export manifest scope
+
+`COMMUNITY_EXPORT_MANIFEST.json` records the deterministic community source
+payload produced by the exporter. Repository-level governance files, CI, and
+packaging templates added after that export are maintained separately and are
+not represented as model/application payload entries.
+
 ## Workflow behavior
 
 Pushing a `v*` tag or manually dispatching the workflow:
