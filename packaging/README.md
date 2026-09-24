@@ -65,7 +65,9 @@ running it, the release operator must provide all of the following:
 - an installed, explicitly selected `Developer ID Application: ...` identity
   in `DEVELOPER_ID_APPLICATION`;
 - a separately configured `xcrun notarytool` keychain profile named by
-  `NOTARYTOOL_PROFILE` (credentials are managed outside this repository);
+  `NOTARYTOOL_PROFILE`, or an App Store Connect API key supplied as
+  `NOTARYTOOL_KEY`, `NOTARYTOOL_KEY_ID`, and `NOTARYTOOL_ISSUER` (the key file
+  remains outside the repository);
 - Apple Silicon macOS, Xcode command-line tools, `codesign`, `notarytool`,
   `stapler`, `spctl`, `ditto`, and (for DMG output) `hdiutil`;
 - a complete `dist/WhisperDictate.app` and the entitlements file.
