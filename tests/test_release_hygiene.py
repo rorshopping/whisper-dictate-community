@@ -212,11 +212,18 @@ class WorkflowSanityTests(unittest.TestCase):
 
     def test_export_manifest_hashes_match_listed_source_files(self):
         manifest = json.loads((ROOT / "COMMUNITY_EXPORT_MANIFEST.json").read_text(encoding="utf-8"))
+        binary_suffixes = {".wav", ".ico", ".png", ".jpg", ".jpeg", ".gif", ".zip", ".exe", ".dll", ".bin", ".safetensors"}
         for entry in manifest["files"]:
             path = ROOT / entry["path"]
             self.assertTrue(path.is_file(), entry["path"])
-            self.assertEqual(path.stat().st_size, entry["size"], entry["path"])
-            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), entry["sha256"], entry["path"])
+            data = path.read_bytes()
+            # Git attributes intentionally use CRLF for a few Windows launch
+            # files. The manifest records canonical Git/LF text bytes, so
+            # normalize checkout line endings before comparing hashes.
+            if path.suffix.lower() not in binary_suffixes:
+                data = data.replace(b"\r\n", b"\n")
+            self.assertEqual(len(data), entry["size"], entry["path"])
+            self.assertEqual(hashlib.sha256(data).hexdigest(), entry["sha256"], entry["path"])
 
 
 if __name__ == "__main__":
