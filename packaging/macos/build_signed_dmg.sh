@@ -110,7 +110,7 @@ MODEL_ARTIFACT="$(find "$APP_PATH" -type f \( \
 \) -print -quit)"
 [[ -z "$MODEL_ARTIFACT" ]] || fail "model artifact found in app payload: $MODEL_ARTIFACT"
 MODEL_DIRECTORY="$(find "$APP_PATH" -type d \( \
-  -name 'models' -o -name 'models--*' -o -name 'huggingface' \
+  -name 'models--*' -o -name 'model-cache' -o -name 'huggingface' \
 \) -print -quit)"
 [[ -z "$MODEL_DIRECTORY" ]] || fail "model directory found in app payload: $MODEL_DIRECTORY"
 

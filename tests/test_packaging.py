@@ -114,6 +114,10 @@ class MacOSDocumentationTests(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.script)
 
+    def test_macos_guard_allows_library_model_packages(self):
+        self.assertIn("-name 'models--*'", self.script)
+        self.assertNotIn("-name 'models'", self.script)
+
     def test_macos_template_does_not_embed_credentials_or_identity(self):
         for forbidden in (
             "AuthKey_",
