@@ -2,8 +2,8 @@
   "files": [
     {
       "path": "COMMUNITY_RELEASE_DECISION.md",
-      "sha256": "1f4b642d1091c92d68ad40c7efd252148588603be3d84f7237d5483ba5cdcd30",
-      "size": 2645
+      "sha256": "947dc81ea70415e4a4807fe8a47fa9f2186ece1f92ebd688b00f658938fc3509",
+      "size": 3504
     },
     {
       "origin": "generated-first-party-license",
