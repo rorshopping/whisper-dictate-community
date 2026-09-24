@@ -26,6 +26,9 @@ OUTPUT_DIR="${OUTPUT_DIR:-$REPO_ROOT/dist/packaging}"
 VERSION="${VERSION:-}"
 DEVELOPER_ID_APPLICATION="${DEVELOPER_ID_APPLICATION:-}"
 NOTARYTOOL_PROFILE="${NOTARYTOOL_PROFILE:-}"
+NOTARYTOOL_KEY="${NOTARYTOOL_KEY:-}"
+NOTARYTOOL_KEY_ID="${NOTARYTOOL_KEY_ID:-}"
+NOTARYTOOL_ISSUER="${NOTARYTOOL_ISSUER:-}"
 BUNDLE_ID="${BUNDLE_ID:-com.beckerhub.whisperdictate}"
 FORMAT="${FORMAT:-zip}"
 
@@ -46,8 +49,14 @@ case "$DEVELOPER_ID_APPLICATION" in
   "Developer ID Application:"*) ;;
   *) fail "DEVELOPER_ID_APPLICATION must be an installed Developer ID Application identity" ;;
 esac
-[[ -n "$NOTARYTOOL_PROFILE" ]] || \
-  fail "set NOTARYTOOL_PROFILE to a preconfigured xcrun notarytool keychain profile"
+if [[ -z "$NOTARYTOOL_PROFILE" ]]; then
+  [[ -n "$NOTARYTOOL_KEY" && -n "$NOTARYTOOL_KEY_ID" && -n "$NOTARYTOOL_ISSUER" ]] || \
+    fail "set NOTARYTOOL_PROFILE or provide NOTARYTOOL_KEY, NOTARYTOOL_KEY_ID, and NOTARYTOOL_ISSUER"
+  [[ -f "$NOTARYTOOL_KEY" ]] || fail "NOTARYTOOL_KEY does not exist: $NOTARYTOOL_KEY"
+  NOTARY_ARGS=(--key "$NOTARYTOOL_KEY" --key-id "$NOTARYTOOL_KEY_ID" --issuer "$NOTARYTOOL_ISSUER")
+else
+  NOTARY_ARGS=(--keychain-profile "$NOTARYTOOL_PROFILE")
+fi
 
 case "$FORMAT" in
   zip|dmg) ;;
@@ -151,7 +160,7 @@ ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$UPLOAD_ZIP"
 # The keychain profile is supplied out of band.  No Apple ID, team secret,
 # private key, or password is read from this repository or embedded here.
 xcrun notarytool submit "$UPLOAD_ZIP" \
-  --keychain-profile "$NOTARYTOOL_PROFILE" --wait
+  "${NOTARY_ARGS[@]}" --wait
 xcrun stapler staple "$APP_PATH"
 xcrun stapler validate "$APP_PATH"
 spctl --assess --type execute --verbose=4 "$APP_PATH"
@@ -166,7 +175,7 @@ else
     -ov -format UDZO "$DMG_PATH"
   codesign --force --timestamp --sign "$DEVELOPER_ID_APPLICATION" "$DMG_PATH"
   xcrun notarytool submit "$DMG_PATH" \
-    --keychain-profile "$NOTARYTOOL_PROFILE" --wait
+    "${NOTARY_ARGS[@]}" --wait
   xcrun stapler staple "$DMG_PATH"
   xcrun stapler validate "$DMG_PATH"
   hdiutil verify "$DMG_PATH"
