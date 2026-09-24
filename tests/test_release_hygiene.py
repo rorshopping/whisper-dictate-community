@@ -210,6 +210,14 @@ class WorkflowSanityTests(unittest.TestCase):
         for pattern in ("*.log", "*.jsonl", "*.local.*", ".env*", "lost_audio/", ".venv/"):
             self.assertIn(pattern, ignore)
 
+    def test_export_manifest_hashes_match_listed_source_files(self):
+        manifest = json.loads((ROOT / "COMMUNITY_EXPORT_MANIFEST.json").read_text(encoding="utf-8"))
+        for entry in manifest["files"]:
+            path = ROOT / entry["path"]
+            self.assertTrue(path.is_file(), entry["path"])
+            self.assertEqual(path.stat().st_size, entry["size"], entry["path"])
+            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), entry["sha256"], entry["path"])
+
 
 if __name__ == "__main__":
     unittest.main()
