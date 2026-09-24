@@ -12,7 +12,8 @@ dist/
 
 # Local runtime data
 *.log
-*.local.txt
+*.jsonl
+*.local.*
 config.local.json
 .env
 .env.*
