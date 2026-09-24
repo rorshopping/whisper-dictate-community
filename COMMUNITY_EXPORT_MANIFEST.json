@@ -211,8 +211,8 @@
     },
     {
       "path": "launcher.py",
-      "sha256": "8e03f1fb085850a689da7964e85e49173447ec0ccfd8574a5ea49b08b6b4618f",
-      "size": 672
+      "sha256": "5ccdaba258a74de9b2f06877c2e6f4e44822862660a446169cfcb8176b1c9256",
+      "size": 754
     },
     {
       "path": "main.py",
