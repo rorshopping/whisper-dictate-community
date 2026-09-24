@@ -4,6 +4,8 @@ Local, offline push-to-talk dictation for programming and AI terms. Press and
 hold a hotkey, speak, release — the text is transcribed on your own machine
 (with your own GPU) and pasted at the cursor.
 
+Community website: https://whisper-dictate-community-web.vercel.app
+
 > **Community Edition:** the first use of each language downloads a pinned
 > NVIDIA model (approximately 2.4 GB). After the model is verified locally,
 > transcription and audio processing remain on-device. The application sends no
