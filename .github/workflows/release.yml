@@ -56,8 +56,9 @@ jobs:
       - name: Remove generated Python caches
         shell: pwsh
         run: |
-          Get-ChildItem dist -Recurse -Directory -Filter __pycache__ | Remove-Item -Recurse -Force
-          Get-ChildItem dist -Recurse -File -Include *.pyc,*.pyo | Remove-Item -Force
+          Get-ChildItem -Path dist -Recurse -Directory -Filter __pycache__ | Remove-Item -Recurse -Force
+          Get-ChildItem -Path dist -Recurse -File -Filter *.pyc | Remove-Item -Force
+          Get-ChildItem -Path dist -Recurse -File -Filter *.pyo | Remove-Item -Force
 
       - name: Create and inspect Windows archive
         shell: pwsh

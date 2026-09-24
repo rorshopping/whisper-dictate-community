@@ -197,6 +197,7 @@ class WorkflowSanityTests(unittest.TestCase):
         self.assertIn("NOTES_release-hygiene.md", workflow)
         self.assertIn("__pycache__", workflow)
         self.assertIn("*.pyc", workflow)
+        self.assertIn("-Filter *.pyc", workflow)
 
     def test_release_dependency_file_reuses_runtime_requirements(self):
         requirements = (ROOT / "requirements-release.txt").read_text(encoding="utf-8")
