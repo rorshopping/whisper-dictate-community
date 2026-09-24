@@ -53,6 +53,12 @@ jobs:
       - name: Build
         run: python -m PyInstaller --noconfirm --clean WhisperDictate.spec
 
+      - name: Remove generated Python caches
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -Recurse -Directory -Filter __pycache__ | Remove-Item -Recurse -Force
+          Get-ChildItem dist -Recurse -File -Include *.pyc,*.pyo | Remove-Item -Force
+
       - name: Create and inspect Windows archive
         shell: pwsh
         run: |
@@ -109,6 +115,12 @@ jobs:
 
       - name: Build
         run: python -m PyInstaller --noconfirm --clean WhisperDictate.spec
+
+      - name: Remove generated Python caches
+        shell: bash
+        run: |
+          find dist -type d -name __pycache__ -prune -exec rm -rf {} +
+          find dist -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 
       - name: Create and inspect macOS archive
         shell: bash
