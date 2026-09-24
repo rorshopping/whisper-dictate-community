@@ -15,8 +15,7 @@ dist/
 *.jsonl
 *.local.*
 config.local.json
-.env
-.env.*
+.env*
 dictate.log*
 transcription-history.jsonl
 lost_audio/
