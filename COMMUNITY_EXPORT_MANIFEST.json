@@ -29,8 +29,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "7bcc29bd95024ac566d1f4f4307f6684abed07f2941fe23241a456e54533842d",
-      "size": 19886,
+      "sha256": "ce4d3d4145c95bf7e6a603c0f01d7f8c7df99d6761eb0614ffeb03990dd4a0ae",
+      "size": 20269,
       "transform": "community-license-section"
     },
     {
@@ -222,8 +222,8 @@
     },
     {
       "path": "model_manager.py",
-      "sha256": "7484577654ec32baa8afa77a2044a293f2ec94c83e65fca0fedf1481e378cc51",
-      "size": 82602
+      "sha256": "fa603ce5296dd1e867fba7386852526ad16708280783a554fe33affb15ff59fb",
+      "size": 82610
     },
     {
       "path": "nemotron_engine.py",
@@ -288,8 +288,8 @@
     },
     {
       "path": "tests/test_model_manager.py",
-      "sha256": "808b02b91b03445190edd9ff6df1327713396bcf258d59ed010e57cc0b888a69",
-      "size": 14190
+      "sha256": "40680a8e0ef3286f1894bcf77966d9a03f66306edc3f1b40ea77ede921889177",
+      "size": 14198
     },
     {
       "path": "tests/test_nemotron_chunking.py",
