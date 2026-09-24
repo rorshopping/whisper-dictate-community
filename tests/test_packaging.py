@@ -118,6 +118,12 @@ class MacOSDocumentationTests(unittest.TestCase):
         self.assertIn("-name 'models--*'", self.script)
         self.assertNotIn("-name 'models'", self.script)
 
+    def test_macos_archive_omits_appledouble_metadata(self):
+        self.assertNotIn("--sequesterRsrc", self.script)
+        for flag in ("--norsrc", "--noextattr", "--noacl", "--noqtn"):
+            with self.subTest(flag=flag):
+                self.assertIn(flag, self.script)
+
     def test_macos_template_does_not_embed_credentials_or_identity(self):
         for forbidden in (
             "AuthKey_",

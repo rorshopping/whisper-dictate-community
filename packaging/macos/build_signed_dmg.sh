@@ -155,7 +155,7 @@ codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/whisper-dictate-notary.XXXXXX")"
 trap 'rm -rf "$WORK_DIR"' EXIT
 UPLOAD_ZIP="$WORK_DIR/$OUTPUT_NAME-upload.zip"
-ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$UPLOAD_ZIP"
+ditto -c -k --keepParent --norsrc --noextattr --noacl --noqtn "$APP_PATH" "$UPLOAD_ZIP"
 
 # The keychain profile is supplied out of band.  No Apple ID, team secret,
 # private key, or password is read from this repository or embedded here.
@@ -168,7 +168,7 @@ spctl --assess --type execute --verbose=4 "$APP_PATH"
 if [[ "$FORMAT" == "zip" ]]; then
   # Recreate the archive after stapling so the published bytes contain the
   # notarization ticket, not just the pre-notarization upload.
-  ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$OUTPUT_PATH"
+  ditto -c -k --keepParent --norsrc --noextattr --noacl --noqtn "$APP_PATH" "$OUTPUT_PATH"
 else
   DMG_PATH="$WORK_DIR/$OUTPUT_NAME.dmg"
   hdiutil create -volname "Whisper Dictate" -srcfolder "$APP_PATH" \
