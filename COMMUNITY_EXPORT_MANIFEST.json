@@ -19,13 +19,13 @@
     },
     {
       "path": "NOTES_model-resolver.md",
-      "sha256": "166c09b812a9420936ad38f7ec8a84e6acf38565e78480ec665f40a062f67489",
-      "size": 9578
+      "sha256": "e6a3da2f8547204bd60e7ad44227afac786bb9a57c1f0f09ec9a6693dcca9401",
+      "size": 9368
     },
     {
       "path": "NOTES_portable-paths.md",
-      "sha256": "88c3de7b76354e501e196aa77b6bb75f4a5a980d68c58dc37d7e483f5d55caea",
-      "size": 3934
+      "sha256": "6e2ad039aa29dc119a7048ad7aab695013445c2cc2ddc33a7dbc0b91fdd7139b",
+      "size": 3854
     },
     {
       "path": "README.md",
@@ -35,23 +35,23 @@
     },
     {
       "path": "THIRD-PARTY-NOTICES.md",
-      "sha256": "3067590f75d5590978c1d2891ee4b33bc971e97e7f76dbb695f8a1c574cb1957",
-      "size": 249259
+      "sha256": "1f1c4efaaf787fb3802af4b3700803fc764146fb850e981cee00113f6297149a",
+      "size": 244014
     },
     {
       "path": "WhisperDictate.spec",
-      "sha256": "713bc974a3d526995ac9d4f9f65d097d6c019ec2bb13a87265d372d5978f367b",
-      "size": 2656
+      "sha256": "5ba51baece12ef6f2098e85dfc7a105f203d3814e9b44320438af93b4b7aac9e",
+      "size": 2562
     },
     {
       "path": "app_paths.py",
-      "sha256": "e4c1d34cea5fbeaf4fbde950ce904facf60931d0b9d50d3e44baf09874cf7bc3",
-      "size": 16477
+      "sha256": "90ad4d1bfbaa25926a60c0f5235456857950404dd216cf380a29c53dd873d81a",
+      "size": 15982
     },
     {
       "path": "assets/sounds/SOURCES.md",
-      "sha256": "46d77e0b06b593bdf205fe30f4adc8b81b3837dbf76a5a2d098ca555eaaee81c",
-      "size": 3034
+      "sha256": "5efbfe9feb3054446b2e5de8283a266af6e0206903d5310a1fe4a6043197b53b",
+      "size": 2984
     },
     {
       "path": "assets/sounds/double-bell-done.wav",
@@ -115,8 +115,8 @@
     },
     {
       "path": "assets/sounds/manifest.json",
-      "sha256": "6c139cb1982a929c0ba57acca09032d802e115ad0a6b7ebcadcaa53bd54e3102",
-      "size": 4220
+      "sha256": "9308bc3794326f44dfa4cab5cbd6656ca81d38c61223409bf6a5edb4105df788",
+      "size": 4133
     },
     {
       "path": "assets/sounds/message-chime-done.wav",
@@ -171,33 +171,33 @@
     },
     {
       "path": "corrections-en.txt",
-      "sha256": "a42831bf3b70bb55aaa514b1a67e0824f1a25fb86abe4425c3466101f875fd06",
-      "size": 1549
+      "sha256": "2909a101d130711805a05d6f12b30419a30166bdabb3947646b195999306d8c0",
+      "size": 1502
     },
     {
       "path": "enhanced_features.py",
-      "sha256": "66de3965ad1afcef41a50068a97f123bbd9353b02173fc382e8dd067e6f68d94",
-      "size": 3535
+      "sha256": "28d4252d590fcde856bf59ef7ff6b594ef33a7071f8774f588948a668d671f14",
+      "size": 3430
     },
     {
       "path": "hotkey_settings.py",
-      "sha256": "0399fe89793037ad609c62d293e5dab407cd7e96de41ada906f5bc8761adaaa4",
-      "size": 7975
+      "sha256": "a2ef9d75688b3c763df2ec04e49904d8a2209fe25013f5f25fd3c03586b229ed",
+      "size": 7758
     },
     {
       "path": "hotword_fuzzy.py",
-      "sha256": "91419d14e7b59bfd872847a5f057fd07cc77ab7d26422efa81d15339ff87f83c",
-      "size": 6249
+      "sha256": "0e1285aab87f857f1dbc2c9ac540ca359ce3b4f48ecc7dcee3961bf1b39d95fb",
+      "size": 6095
     },
     {
       "path": "hotwords-de.txt",
-      "sha256": "e07c0f11a61338ab0c36bd1f6aac990d160961c193702a30d0f205b735b8194c",
-      "size": 1042
+      "sha256": "7f3af2f7b3a163935d2f5fbe67190d2a51564833d9c60f8b4a5500eedb27b2e1",
+      "size": 972
     },
     {
       "path": "hotwords-en.txt",
-      "sha256": "102e547a0b85cf33d946d2bffe27c5b26f494184946046961a079050b0110292",
-      "size": 1113
+      "sha256": "3c86eab18f1294c71d522320cd36c69061373594621d6335ef6f43604d1cd3a5",
+      "size": 1030
     },
     {
       "path": "icon.ico",
@@ -206,13 +206,13 @@
     },
     {
       "path": "install.py",
-      "sha256": "bcc47fb7d001e67005b0c574e6abc908edd34239e9f89d6cc46a108e60c4cc1a",
-      "size": 5841
+      "sha256": "010f7f453a0d1bf4401978a4ea3b605f46ace17297187debe45ec1fc619c5b1c",
+      "size": 5677
     },
     {
       "path": "launcher.py",
-      "sha256": "5ccdaba258a74de9b2f06877c2e6f4e44822862660a446169cfcb8176b1c9256",
-      "size": 754
+      "sha256": "393b1bf807a6695efcf5f4c9d524379d192c0048a393d361a7a073d0bb74ab98",
+      "size": 726
     },
     {
       "path": "main.py",
@@ -222,104 +222,104 @@
     },
     {
       "path": "model_manager.py",
-      "sha256": "fa603ce5296dd1e867fba7386852526ad16708280783a554fe33affb15ff59fb",
-      "size": 82610
+      "sha256": "7d1bb4c6f86b02143f8b788dac97b7d5e35d19c9dc4bce95936ea952fb36f8b6",
+      "size": 80499
     },
     {
       "path": "nemotron_engine.py",
-      "sha256": "1b50362daff06ff8bc92078e3f458e228e80d035e3e0c77073633650d2ec194b",
-      "size": 23140
+      "sha256": "33690c282e9ea7b962c4859c1779ed1577fbb6ff84981e3a774ec74f3225dc1c",
+      "size": 22601
     },
     {
       "path": "platform_mac.py",
-      "sha256": "095f0379284d603789d855d944a4445099473ca4b90b76dcd8743846b0321448",
-      "size": 16153
+      "sha256": "c6128aead1a9391e9cfde08ec75dac8c44c917802127845124e7b12eda918ece",
+      "size": 15656
     },
     {
       "path": "requirements.txt",
-      "sha256": "aee01e36c19f4eb1e1320cc173011c3c155345638132ab00917571f76ccdff53",
-      "size": 590
+      "sha256": "fb8af1bfd7b9bdee29086e18f30fc2931a43b2eab9d376b12f89bc21ca50ef25",
+      "size": 568
     },
     {
       "path": "run.bat",
-      "sha256": "a1f761fd58c194170a480b3c08e5f26707663efe4dc2fdaaf557758043fae821",
-      "size": 247
+      "sha256": "97e0b69cb041b187762baff905b997d6f2b96dca97aee29e96aff8e73ce96516",
+      "size": 241
     },
     {
       "path": "run_hidden.vbs",
-      "sha256": "4f8b81d141de964023c14ea18e29a7a1639a9bfda3d5dcfac886dc9bb2235d4e",
-      "size": 587
+      "sha256": "44dda0ff1398dd93289ed2fff88724ec082da46ea28df154df78ae940df63297",
+      "size": 577
     },
     {
       "mode": "100755",
       "path": "run_mac.sh",
-      "sha256": "bffc97885cb9834676332174ed9d9d290bd630f13355eb729f0690a5fa0bd957",
-      "size": 765
+      "sha256": "280f960be0b2278eb49922801234794162acf23ca15f020d2623a09cd443a0c5",
+      "size": 743
     },
     {
       "path": "smart_format.py",
-      "sha256": "82ecc73c51e3f70949d41b015f94bb17de34e0d61b1230ec9b4a0b429843c25a",
-      "size": 5881
+      "sha256": "fa4ca7afc722481a1693fe578b84af1b7064f30f92c52781b04bfcc032469096",
+      "size": 5714
     },
     {
       "path": "snippets-de.txt",
-      "sha256": "9e60b4ff6537c44769ca74978eeb22dbb64f70d72ae503b1bc3e5a28e72b9f12",
-      "size": 733
+      "sha256": "faa0cf9a1a9c671eb7f11be0ce879749b0d3305d6476d39e0b21221e15b0cd8b",
+      "size": 719
     },
     {
       "path": "snippets-en.txt",
-      "sha256": "069d01a2ea714dbf156439fcc2f4115b5d740b263605c082d5a132f73f8a9e7d",
-      "size": 817
+      "sha256": "ccee6aeff8c26a2873a42def822ab74a3e3e65d054f321bcfba0365b83ef8465",
+      "size": 802
     },
     {
       "path": "sound_cues.py",
-      "sha256": "0caf41c801c12cc3b93f7656c2b36dde4e44f1c7e47ccb1ce3f06b6ee58ec7f8",
-      "size": 7268
+      "sha256": "b10104dceed1d7a4d91cf412301b442501663813ccafd34944d7b98f7e884f7f",
+      "size": 7094
     },
     {
       "path": "tests/test_app_paths.py",
-      "sha256": "cb474623ce0764b06767ead9d2075659b8bef4d233e1ef0b27ad1157c8620549",
-      "size": 8798
+      "sha256": "43b45b78b91125e9e2a91bff26fc3bf7790c8187934fdb143e009baf6af52cbe",
+      "size": 8598
     },
     {
       "path": "tests/test_hotkey_settings.py",
-      "sha256": "aab5545a66bef851064beaeb9cf2ed78079029c945aa13bd6701169a3b086c35",
-      "size": 3842
+      "sha256": "39287ba0588044e2a069401d2bfcd27f658268f97e148c119fd34edbc5ee51fc",
+      "size": 3745
     },
     {
       "path": "tests/test_model_manager.py",
-      "sha256": "40680a8e0ef3286f1894bcf77966d9a03f66306edc3f1b40ea77ede921889177",
-      "size": 14198
+      "sha256": "74889f9e566305c36011bb202fbc35bb588af29c85dfe3b592bb26409b9420e5",
+      "size": 13861
     },
     {
       "path": "tests/test_nemotron_chunking.py",
-      "sha256": "8dacfb3d06c2af77a5bc758f32fbdffffc0492cc66919a2d32c7e457addeaff7",
-      "size": 3571
+      "sha256": "fe8b42a1bc36fcf3441b031c235230940ecc4f275ca7928d6947c20cec485e0d",
+      "size": 3477
     },
     {
       "path": "tests/test_nemotron_model_resolution.py",
-      "sha256": "6b4c7f8337ad20bd13af925a18a58768bbdcb21f98ae751b919587e04a137eba",
-      "size": 6229
+      "sha256": "6c7f20251e4a54f349a1f355a5dc75d5ce89ee97daca7490ebf058ba859c6b32",
+      "size": 6061
     },
     {
       "path": "tests/test_smart_format.py",
-      "sha256": "6827a7f40a243e47ef38ebfc8c730ae29085812cdfdbaf04ce615efbce55dbcf",
-      "size": 3379
+      "sha256": "3c84721258c0afe1e45a94c446606c88b3ef449697bf7c689f65532bcf49fa1c",
+      "size": 3292
     },
     {
       "path": "tests/test_sound_cues.py",
-      "sha256": "3008a48418bd0f1e2bfd6720768b076939791bc0d65b7d7491f781692d0fcf87",
-      "size": 6074
+      "sha256": "b98e5cd33fe519318c137055ae7d632f0ab4f21c2ee7bc1ce2192fbe45dec4aa",
+      "size": 5948
     },
     {
       "path": "tests/test_voice_commands.py",
-      "sha256": "90f29e5a0de7f97ac273281021d47ac443504429c537a325952f4a56e2ebdda8",
-      "size": 2217
+      "sha256": "131a1c1beccb7e1806a9a1bc5c895360ace5a4a2af7c9b9ada322ce22190be2e",
+      "size": 2165
     },
     {
       "path": "voice_commands.py",
-      "sha256": "17ce9f23a7616abdb2c579982b956749f52c282f8827ca1dfb9518c9406a6deb",
-      "size": 3069
+      "sha256": "5679682e993c78d00e6940bda92e3dab0c63e2d5db7f096206c5d3a21b29ba53",
+      "size": 2987
     }
   ],
   "first_party_license": "MIT",
