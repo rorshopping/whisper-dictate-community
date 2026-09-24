@@ -1,0 +1,28 @@
+# Python/build output
+.venv/
+.venv-build/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+build/
+dist/
+*.spec.bak
+
+# Local runtime data
+*.local.txt
+config.local.json
+.env
+.env.*
+dictate.log*
+transcription-history.jsonl
+lost_audio/
+models/
+*.wav
+!assets/sounds/*.wav
+
+# IDE/OS
+.DS_Store
+.vscode/
+.idea/

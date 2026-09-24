@@ -1,0 +1,47 @@
+# Deterministic post-transcription corrections: wrong => correct, one per line.
+# Applied case-insensitively to every final transcription (fast, no model cost).
+# Add variants Whisper actually outputs, e.g. if it writes "pie coding agent".
+# Lines starting with # are ignored. Reload via tray menu "Reload hotwords".
+#
+# Personal corrections belong in corrections-en.local.txt (gitignored) so your
+# private vocabulary never ends up in the public repo. Both files are merged.
+
+py coding agent => pi coding agent
+pie coding agent => pi coding agent
+pycoding => pi coding
+committment push => commit and push
+commitment push => commit and push
+reppo => repo
+github => GitHub
+open code => OpenCode
+open code 2 => OpenCode 2
+open code two => OpenCode 2
+open code go => OpenCode
+z code => Z-Code
+deep seek => DeepSeek
+11 labs => ElevenLabs
+play the right => Playwright
+Playrouet => Playwright
+neimotron => Nemotron
+nemo tron => Nemotron
+voice box => Voicebox
+kokoro => Kokoro
+remotion => Remotion
+hyperframes => HyperFrames
+tailscale => Tailscale
+trial bounds => trial balances
+recall minus app => recall-app
+sub agent => sub agents
+subagent => sub agents
+sub-agent => sub agents
+ECOSU => accuracy
+
+# User-confirmed mishearings (2026-09-17)
+# Intentional preference: also changes literal "I want it to" statements.
+I want it to => I want you to
+I wanted to => I want you to
+
+# Additional unambiguous variants observed in history
+banana pie => Banana Pi
+verse cell CLI => Vercel CLI
+Hiker News => Hacker News
