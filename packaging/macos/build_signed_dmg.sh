@@ -178,9 +178,16 @@ else
     "${NOTARY_ARGS[@]}" --wait
   xcrun stapler staple "$DMG_PATH"
   xcrun stapler validate "$DMG_PATH"
-  hdiutil verify "$DMG_PATH"
-  spctl --assess --type diskimage --verbose=4 "$DMG_PATH"
+  # Publish before the remaining checks: a notarized disk image is the
+  # expensive part of this script, and the temporary work dir is removed by the
+  # EXIT trap.  Losing one to a bad verification command is not recoverable
+  # without paying for notarization again.
   cp "$DMG_PATH" "$OUTPUT_PATH"
+  hdiutil verify "$OUTPUT_PATH"
+  # `--type diskimage` is not a valid spctl assessment type on current macOS;
+  # the supported check for a signed disk image is an open assessment against
+  # the primary signature.
+  spctl -a -t open --context context:primary-signature -vv "$OUTPUT_PATH"
 fi
 
 shasum -a 256 "$OUTPUT_PATH"

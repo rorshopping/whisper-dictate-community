@@ -675,6 +675,7 @@ def _nemotron_model_options(profile, config=None):
         "revision": settings.revision,
         "source_order": settings.source_order,
         "mirror_url": settings.mirror_url,
+        "mirror_urls": list(settings.mirror_urls),
         "huggingface_endpoint": settings.huggingface_endpoint,
         # Top-level offline is the legacy cache-aware bootstrap switch.  An
         # explicit model_resolver/profile value remains strict even on a
@@ -1412,6 +1413,67 @@ def _notify_transcription_failed(profile, path):
         pass
 
 
+def prefetch_profile_models(profiles=None, delay_s: float = 0.0):
+    """Download every configured profile's pinned model files on startup.
+
+    Resolving a model is what fetches missing files, so this completes a first
+    run before the user ever holds the hotkey.  It deliberately does *not*
+    build an engine: loading two models at once would double memory for no
+    benefit, and `get_model` still loads the profile that is actually used.
+
+    Failures are logged and swallowed.  A profile that cannot be prefetched
+    must still be usable later through the normal on-demand path, and a
+    resolver error here must not stop the app from starting.
+    """
+
+    if profiles is None:
+        profiles = list(cfg.get("profiles") or [])
+    if not profiles:
+        return {}
+
+    def _run():
+        if delay_s:
+            time.sleep(delay_s)
+        outcomes = {}
+        for profile in profiles:
+            if profile.engine != "nemotron":
+                continue
+            name = getattr(profile, "name", "?")
+            try:
+                model_reference, model_options = _nemotron_model_options(profile)
+                # Resolving publishes/validates the snapshot in the cache; the
+                # engine is constructed later by get_model().
+                from model_manager import ModelManager
+
+                manager = ModelManager(cache_dir=model_options.get("cache_dir"))
+                resolved = manager.resolve(model_reference, **{
+                    key: value
+                    for key, value in model_options.items()
+                    if key
+                    in {
+                        "language",
+                        "revision",
+                        "source_order",
+                        "mirror_url",
+                        "mirror_urls",
+                        "huggingface_endpoint",
+                        "offline",
+                        "cache_path",
+                        "local_model_dir",
+                    }
+                })
+                outcomes[name] = str(resolved.path)
+                log(f"[{name}] Model ready at {resolved.path} ({resolved.source})")
+            except Exception as exc:  # noqa: BLE001 - prefetch is best effort
+                outcomes[name] = f"failed: {exc}"
+                log(f"[{name}] Model prefetch failed: {exc}")
+        return outcomes
+
+    thread = threading.Thread(target=_run, daemon=True, name="model-prefetch")
+    thread.start()
+    return thread
+
+
 def get_model(profile):
     with model_lock:
         if profile.model_obj is None:
@@ -2083,6 +2145,10 @@ def main():
                 show_state("ready")
 
     threading.Thread(target=preload, daemon=True).start()
+    # Every profile's files are fetched now, so the first dictation of a
+    # language does not pay for a multi-gigabyte download.  The default
+    # profile is still loaded into memory by preload() above.
+    prefetch_profile_models()
     threading.Thread(
         target=_model_idle_watchdog, daemon=True, name="model-idle-watchdog"
     ).start()

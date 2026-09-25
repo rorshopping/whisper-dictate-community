@@ -19,8 +19,8 @@
     },
     {
       "path": "NOTES_model-resolver.md",
-      "sha256": "c4b1329ab69f67a6faedc1df5768e4f1ef7b982c65cc9d3c7666ac1e658b9210",
-      "size": 10506
+      "sha256": "363b07ea6c43fa0ae842b111a7f60a02a219e8a4d586ad59eb0ecb72f86fd340",
+      "size": 13551
     },
     {
       "path": "NOTES_portable-paths.md",
@@ -29,8 +29,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "ce4d3d4145c95bf7e6a603c0f01d7f8c7df99d6761eb0614ffeb03990dd4a0ae",
-      "size": 20269,
+      "sha256": "6d714b726acdf21094e044fda41cbf6cca802642a8479e15c811c2037b878fa2",
+      "size": 21671,
       "transform": "community-license-section"
     },
     {
@@ -160,8 +160,8 @@
     },
     {
       "path": "config.json",
-      "sha256": "ede73c259b195acab384ae07368b2f421baaa153b46e1b4c41ed369f371d72ce",
-      "size": 1831,
+      "sha256": "b2546ff43b1e4c06236a8e05e75d2c77cbdbabc8493726d46ec191dcf23ba358",
+      "size": 1889,
       "transform": "community-config"
     },
     {
@@ -216,19 +216,19 @@
     },
     {
       "path": "main.py",
-      "sha256": "cbd9f0dc715364d2216bb687de98251fb7b24d371cfd2aee333ac3db825282f3",
-      "size": 77661,
+      "sha256": "3d1e09282cbdd75d10553301b0fd7b011dd2ba88d6eabf0863fc7edc633b134c",
+      "size": 80420,
       "transform": "community-runtime"
     },
     {
       "path": "model_manager.py",
-      "sha256": "7d1bb4c6f86b02143f8b788dac97b7d5e35d19c9dc4bce95936ea952fb36f8b6",
-      "size": 80499
+      "sha256": "2700ffd0eb1e533f7102bc8dbfc018a87504200429d6fb2992d6edc3ac632303",
+      "size": 94844
     },
     {
       "path": "nemotron_engine.py",
-      "sha256": "33690c282e9ea7b962c4859c1779ed1577fbb6ff84981e3a774ec74f3225dc1c",
-      "size": 22601
+      "sha256": "8885951a417581228cd502ff97cc62025062b9871742d79dcab03bff3e638dfe",
+      "size": 23153
     },
     {
       "path": "platform_mac.py",

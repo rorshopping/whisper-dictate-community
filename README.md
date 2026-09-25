@@ -219,8 +219,10 @@ directly skips the macOS support.
 ```
 
 macOS notes:
-- The first run downloads the models from Hugging Face (~2.4 GB for each of
-  the English and German Nemotron models) — keep internet on for that one run.
+- The first run downloads the models (~2.4 GB for each of the English and
+  German Nemotron models) from the configured mirror chain, falling back to
+  Hugging Face — keep internet on for that one run. Every profile is prefetched
+  at startup, so the download finishes before the first dictation.
 - The installer (`python install.py --platform macos`) is used automatically
   on the first `./run_mac.sh`; re-run it any time to update dependencies.
 - GPU: `"device": "auto"` uses the Apple GPU (MPS) via `platform_mac.py` and
@@ -260,8 +262,26 @@ made the model echo prompt words instead of transcribing.
 
 Nemotron model sources are configured with the optional `model_resolver`
 block. Its `source_order` defaults to `local`, `cache`, `mirror`, then
-`huggingface`; `cache_dir` may point at a Hugging Face cache root and
-`mirror_url` must be HTTPS. A profile may set `model_revision`, or put an
+`huggingface`; `cache_dir` may point at a Hugging Face cache root and every
+mirror base must be HTTPS.
+
+`mirror_urls` is an ordered list of HTTPS bases, tried in order before
+Hugging Face. The shipped configuration contains a project-controlled mirror so
+a first run does not depend on `huggingface.co` being reachable; Hugging Face
+stays the last resort, and every downloaded file is verified against the pinned
+SHA-256 no matter which source served it. Set `mirror_urls` to `[]` to disable
+the mirror step, or add your own base (for example an internal object store) in
+front of the shipped one.
+
+A mirror may publish `mirror-manifest.json` next to its files
+(`whisper-dictate.model-mirror.v1`). That format lets a mirror serve a file as
+numbered parts, which is how the project mirror publishes the ~2.4 GB weights
+past hosting services' single-file size limits. Each part is verified by size
+and SHA-256, the assembled file is verified against the pinned hash, and a
+manifest that disagrees with the pinned hashes or revision is refused instead of
+downloaded. A base without that file keeps working with the plain
+Hugging Face-style URL layout. See [`NOTES_model-resolver.md`](NOTES_model-resolver.md)
+for the manifest schema and trust model. A profile may set `model_revision`, or put an
 absolute/`./` model directory in its existing `model` field (with an explicit
 manifest for a custom checkpoint; keep `"engine": "nemotron"` for a custom
 profile). Offline mode accepts only a complete local snapshot, and the
@@ -331,10 +351,11 @@ checkpoints support (1.12 s) for maximum offline accuracy:
 Common notes:
 
 - Requirements: `torch` (CUDA build for GPU) and `transformers>=5.13`.
-- Each checkpoint is ~2.4 GB and is downloaded on first use (or by running the
-  app once with internet on). The bundled model resolver pins the audited
-  commit and required file hashes; it checks local snapshots before loading and
-  records the selected source.
+- Each checkpoint is ~2.4 GB and is downloaded automatically at startup for
+  every configured profile, so the first dictation of a language does not wait
+  for a download. The bundled model resolver pins the audited commit and
+  required file hashes; it checks local snapshots first, then the configured
+  mirror chain, then Hugging Face, and records which source was used.
 - `hotwords-*.txt` is not used by these engines; put deterministic fixes in
   `corrections-*.txt` instead (applied to every transcription).
 - To go back to faster-whisper for a profile, set

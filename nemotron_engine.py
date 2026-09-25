@@ -98,6 +98,7 @@ class NemotronModel:
         cache_dir=None,
         cache_path=None,
         mirror_url=None,
+        mirror_urls=None,
         huggingface_endpoint=None,
         source_order=None,
         source=None,
@@ -121,6 +122,7 @@ class NemotronModel:
             cache_dir=cache_dir,
             cache_path=cache_path,
             mirror_url=mirror_url,
+            mirror_urls=mirror_urls,
             huggingface_endpoint=huggingface_endpoint,
             source_order=source_order,
             source=source,
@@ -144,6 +146,7 @@ class NemotronModel:
         cache_dir=None,
         cache_path=None,
         mirror_url=None,
+        mirror_urls=None,
         huggingface_endpoint=None,
         source_order=None,
         source=None,
@@ -199,6 +202,14 @@ class NemotronModel:
         effective_mirror = mirror_url
         if effective_mirror is None and settings is not None:
             effective_mirror = settings.mirror_url
+        if mirror_urls is not None:
+            effective_mirrors = list(mirror_urls)
+        elif settings is not None:
+            effective_mirrors = list(settings.mirror_urls)
+        else:
+            effective_mirrors = []
+        if effective_mirror and effective_mirror not in effective_mirrors:
+            effective_mirrors.insert(0, effective_mirror)
         effective_hf_endpoint = huggingface_endpoint
         if effective_hf_endpoint is None and settings is not None:
             effective_hf_endpoint = settings.huggingface_endpoint
@@ -260,6 +271,7 @@ class NemotronModel:
                     "offline": bool(offline),
                     "source_order": effective_order,
                     "mirror_url": effective_mirror,
+                    "mirror_urls": effective_mirrors,
                     "huggingface_endpoint": effective_hf_endpoint,
                     "cache_dir": effective_cache_dir,
                     "cache_path": effective_cache_path,
@@ -295,6 +307,7 @@ class NemotronModel:
                 source_order=effective_order,
                 cache_path=effective_cache_path,
                 mirror_url=effective_mirror,
+                mirror_urls=effective_mirrors,
                 huggingface_endpoint=effective_hf_endpoint,
                 offline=offline,
             )

@@ -15,6 +15,9 @@
   "model_resolver": {
     "cache_dir": "~/.cache/huggingface/hub",
     "mirror_url": null,
+    "mirror_urls": [
+      "https://hf-mirror.com"
+    ],
     "source_order": [
       "local",
       "cache",

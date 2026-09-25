@@ -35,10 +35,13 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
 MANIFEST_SCHEMA_VERSION = 1
+MIRROR_MANIFEST_SCHEMA = "whisper-dictate.model-mirror.v1"
+MIRROR_MANIFEST_NAME = "mirror-manifest.json"
 DEFAULT_SOURCE_ORDER = ("local", "cache", "mirror", "huggingface")
 _HF_ENDPOINT = "https://huggingface.co"
 _SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
@@ -648,6 +651,98 @@ def default_manifests() -> ModelManifestCatalog:
 DEFAULT_MANIFESTS = default_manifests()
 
 
+def _sha256_or_fail(value: Any, what: str) -> str:
+    if not isinstance(value, str) or not _SHA256_RE.fullmatch(value):
+        raise ManifestError(f"mirror manifest {what} needs a 64-character SHA-256")
+    return value.lower()
+
+
+def _positive_int_or_fail(value: Any, what: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        raise ManifestError(f"mirror manifest {what} needs a positive integer size")
+    return value
+
+
+def parse_mirror_manifest(data: Any) -> dict[str, dict[str, Any]]:
+    """Validate a mirror manifest and return {model_id: {revision, files}}.
+
+    Fail closed: anything ambiguous (wrong schema, missing hash, part sizes that
+    do not add up, a part URL that is not HTTPS) raises, so a mirror can never
+    make the resolver assemble an unverified file.
+    """
+
+    if not isinstance(data, Mapping):
+        raise ManifestError("mirror manifest must be a JSON object")
+    schema = data.get("schema")
+    if schema != MIRROR_MANIFEST_SCHEMA:
+        raise ManifestError(
+            f"unsupported mirror manifest schema {schema!r}; expected {MIRROR_MANIFEST_SCHEMA!r}"
+        )
+    models = data.get("models")
+    if not isinstance(models, Mapping) or not models:
+        raise ManifestError("mirror manifest needs a non-empty 'models' object")
+    result: dict[str, dict[str, Any]] = {}
+    for model_id, entry in models.items():
+        if not isinstance(model_id, str) or not model_id.strip():
+            raise ManifestError("mirror manifest model id must be a non-empty string")
+        if not isinstance(entry, Mapping):
+            raise ManifestError(f"mirror manifest entry for {model_id!r} must be an object")
+        revision = entry.get("revision")
+        if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-zA-Z._-]{7,64}", revision):
+            raise ManifestError(
+                f"mirror manifest entry for {model_id!r} needs a pinned revision string"
+            )
+        files = entry.get("files")
+        if not isinstance(files, Mapping) or not files:
+            raise ManifestError(f"mirror manifest entry for {model_id!r} needs files")
+        parsed_files: dict[str, Any] = {}
+        for name, spec in files.items():
+            if not isinstance(name, str) or not name.strip() or "/" in name or name in {".", ".."}:
+                raise ManifestError(f"mirror manifest file name is unsafe: {name!r}")
+            if not isinstance(spec, Mapping):
+                raise ManifestError(f"mirror manifest file {name!r} must be an object")
+            size = _positive_int_or_fail(spec.get("size"), f"file {name!r} size")
+            digest = _sha256_or_fail(spec.get("sha256"), f"file {name!r} sha256")
+            parts = spec.get("parts")
+            if parts is None:
+                # A single-part file may be fetched by URL derived from the
+                # mirror base; the caller needs an explicit URL for that.
+                url = validate_https_url(spec.get("url"))
+                if not url:
+                    raise ManifestError(
+                        f"mirror manifest file {name!r} needs either parts or an https url"
+                    )
+                parsed_files[name] = {
+                    "size": size,
+                    "sha256": digest,
+                    "parts": [{"url": url, "size": size, "sha256": digest}],
+                }
+                continue
+            if not isinstance(parts, (list, tuple)) or not parts:
+                raise ManifestError(f"mirror manifest file {name!r} needs a non-empty parts list")
+            parsed_parts: list[dict[str, Any]] = []
+            running = 0
+            for index, part in enumerate(parts):
+                if not isinstance(part, Mapping):
+                    raise ManifestError(f"mirror manifest part {name}[{index}] must be an object")
+                part_url = validate_https_url(part.get("url"))
+                if not part_url:
+                    raise ManifestError(
+                        f"mirror manifest part {name}[{index}] needs an https url"
+                    )
+                part_size = _positive_int_or_fail(part.get("size"), f"part {name}[{index}] size")
+                part_digest = _sha256_or_fail(part.get("sha256"), f"part {name}[{index}] sha256")
+                running += part_size
+                parsed_parts.append({"url": part_url, "size": part_size, "sha256": part_digest})
+            if running != size:
+                raise ManifestError(
+                    f"mirror manifest parts for {name!r} total {running} bytes, expected {size}"
+                )
+            parsed_files[name] = {"size": size, "sha256": digest, "parts": parsed_parts}
+        result[model_id] = {"revision": revision, "files": parsed_files}
+    return result
+
+
 def load_manifest(path: str | os.PathLike[str]) -> ModelManifest:
     """Load a single-model manifest JSON file."""
 
@@ -1047,6 +1142,7 @@ class ModelResolverSettings:
     cache_path: Path | None = None
     local_model_dir: Path | None = None
     mirror_url: str | None = None
+    mirror_urls: tuple[str, ...] = ()
     huggingface_endpoint: str = _HF_ENDPOINT
     source_order: tuple[str, ...] = DEFAULT_SOURCE_ORDER
     offline: bool = False
@@ -1100,6 +1196,77 @@ def validate_https_url(value: str | None) -> str | None:
             f"model mirror must be an HTTPS URL (got {value!r}); refusing insecure fallback"
         )
     return value.rstrip("/")
+
+
+_MIRROR_KEYS = (
+    "mirror_urls",
+    "model_mirror_urls",
+    "model_mirrors",
+    "mirrors",
+)
+_SINGLE_MIRROR_KEYS = (
+    "mirror_url",
+    "model_mirror",
+    "model_mirror_url",
+    "model_mirror_base",
+)
+
+
+def _single_mirror_url(profile: Mapping[str, Any] | None, resolver: Mapping[str, Any] | None) -> str | None:
+    return validate_https_url(_pick(profile, *_SINGLE_MIRROR_KEYS, default=_pick(resolver, *_SINGLE_MIRROR_KEYS)))
+
+
+def _mirror_url_list(
+    profile: Mapping[str, Any] | None,
+    resolver: Mapping[str, Any] | None,
+) -> tuple[str, ...]:
+    """Ordered mirror bases, with the single-URL key as a one-entry list."""
+
+    urls = validate_https_urls(_pick(profile, *_MIRROR_KEYS, default=_pick(resolver, *_MIRROR_KEYS)))
+    if urls:
+        return urls
+    single = _single_mirror_url(profile, resolver)
+    return (single,) if single else ()
+
+
+def _base_host(base_url: str) -> str:
+    """Host of a configured base URL, for trace text only (never a full URL)."""
+
+    return urlparse(base_url).netloc or base_url
+
+
+def validate_https_urls(value: Any) -> tuple[str, ...]:
+    """Normalize one HTTPS base, or an ordered list of them, to a tuple.
+
+    Mirrors are tried in the configured order, so duplicates are dropped while
+    the first occurrence keeps its place.  Anything that is not an HTTPS URL is
+    rejected: an insecure fallback would silently defeat the whole point.
+    """
+
+    if value is None or value == "":
+        return ()
+    if isinstance(value, str):
+        candidates: list[Any] = [value]
+    elif isinstance(value, (list, tuple)):
+        candidates = list(value)
+    else:
+        raise ManifestError(
+            "model mirror URLs must be a string or a list of strings "
+            f"(got {type(value).__name__})"
+        )
+    result: list[str] = []
+    for candidate in candidates:
+        if not isinstance(candidate, str):
+            # A list entry that is not a string is a configuration mistake, not
+            # an absent mirror: failing closed is the only safe reading.
+            raise ManifestError(
+                "each model mirror URL must be a string "
+                f"(got {type(candidate).__name__})"
+            )
+        url = validate_https_url(candidate)
+        if url and url not in result:
+            result.append(url)
+    return tuple(result)
 
 
 def parse_model_config(
@@ -1229,22 +1396,8 @@ def parse_model_config(
         local_model_dir=_optional_path(
             _pick(profile, "local_model_dir", default=_pick(resolver, "local_model_dir"))
         ),
-        mirror_url=validate_https_url(
-            _pick(
-                profile,
-                "model_mirror",
-                "model_mirror_url",
-                "model_mirror_base",
-                "mirror_url",
-                default=_pick(
-                    resolver,
-                    "mirror_url",
-                    "model_mirror",
-                    "model_mirror_url",
-                    "model_mirror_base",
-                ),
-            )
-        ),
+        mirror_url=_single_mirror_url(profile, resolver),
+        mirror_urls=_mirror_url_list(profile, resolver),
         huggingface_endpoint=validate_https_url(
             _pick(
                 profile,
@@ -1326,6 +1479,7 @@ class ModelManager:
         cache_dir: str | os.PathLike[str] | None = None,
         cache_path: str | os.PathLike[str] | None = None,
         mirror_url: str | None = None,
+        mirror_urls: Sequence[str] | str | None = None,
         huggingface_endpoint: str | None = None,
         source_order: Sequence[str] | str | None = None,
         offline: bool = False,
@@ -1365,6 +1519,11 @@ class ModelManager:
         self.cache_dir = _optional_path(cache_dir) or _default_cache_dir()
         self.cache_path = _optional_path(cache_path)
         self.mirror_url = validate_https_url(mirror_url)
+        # An explicit list wins; otherwise the single URL becomes a one-entry
+        # chain so old configurations keep working untouched.
+        self.mirror_urls = validate_https_urls(mirror_urls) or (
+            (self.mirror_url,) if self.mirror_url else ()
+        )
         self.huggingface_endpoint = validate_https_url(huggingface_endpoint) or _HF_ENDPOINT
         self.source_order = normalize_source_order(source_order)
         self.offline = bool(offline)
@@ -1395,6 +1554,7 @@ class ModelManager:
             "cache_dir": settings.cache_dir,
             "cache_path": settings.cache_path,
             "mirror_url": settings.mirror_url,
+            "mirror_urls": settings.mirror_urls,
             "huggingface_endpoint": settings.huggingface_endpoint,
             "source_order": settings.source_order,
             "offline": settings.offline,
@@ -1524,6 +1684,7 @@ class ModelManager:
         source_order: Sequence[str] | str | None = None,
         cache_path: str | os.PathLike[str] | None = None,
         mirror_url: str | None = None,
+        mirror_urls: Sequence[str] | str | None = None,
         huggingface_endpoint: str | None = None,
         offline: bool | None = None,
     ) -> ResolvedModel:
@@ -1554,7 +1715,14 @@ class ModelManager:
         else:
             order = self.source_order
         effective_offline = self.offline if offline is None else bool(offline)
-        effective_mirror = self.mirror_url if mirror_url is None else validate_https_url(mirror_url)
+        if mirror_urls is None:
+            effective_mirrors = self.mirror_urls
+        else:
+            effective_mirrors = validate_https_urls(mirror_urls)
+        if mirror_url is not None:
+            single = validate_https_url(mirror_url)
+            if single and single not in effective_mirrors:
+                effective_mirrors = (single, *effective_mirrors)
         effective_hf_endpoint = (
             self.huggingface_endpoint
             if huggingface_endpoint is None
@@ -1608,21 +1776,31 @@ class ModelManager:
                     )
                     continue
                 if source_name == "mirror":
-                    if not effective_mirror:
+                    if not effective_mirrors:
                         trace.append(
                             ResolutionEvent(
                                 "mirror", "skipped", "no HTTPS mirror configured"
                             )
                         )
                         continue
-                    result = self._download_remote(
-                        selected,
-                        effective_mirror,
-                        "mirror",
-                        trace,
-                    )
-                    if result is not None:
-                        return self._finish(selected, result, "mirror", trace)
+                    for position, base_url in enumerate(effective_mirrors):
+                        result = self._download_remote(
+                            selected,
+                            base_url,
+                            "mirror",
+                            trace,
+                        )
+                        if result is not None:
+                            return self._finish(selected, result, "mirror", trace)
+                        if position < len(effective_mirrors) - 1:
+                            trace.append(
+                                ResolutionEvent(
+                                    "mirror",
+                                    "unavailable",
+                                    f"{_base_host(base_url)} did not serve the pinned "
+                                    "files; trying the next configured mirror",
+                                )
+                            )
                     continue
                 if source_name == "huggingface":
                     result = self._download_remote(
@@ -1684,6 +1862,7 @@ class ModelManager:
             "source_order": settings.source_order,
             "offline": settings.offline,
             "mirror_url": settings.mirror_url,
+            "mirror_urls": settings.mirror_urls,
             "huggingface_endpoint": settings.huggingface_endpoint,
         }
         if settings.manifest is not None:
@@ -1878,12 +2057,129 @@ class ModelManager:
                 trace.append(ResolutionEvent(source_name, "cached", f"using validated cache at {target}", str(target)))
                 return target
         try:
-            path = self._download_snapshot(manifest, base_url, source_name, target)
+            mirror_models = (
+                self._fetch_mirror_manifest(base_url, trace) if source_name == "mirror" else None
+            )
+            path = self._download_snapshot(manifest, base_url, source_name, target, mirror_models)
         except (ModelManagerError, OSError) as exc:
             trace.append(ResolutionEvent(source_name, "failed", str(exc)))
             return None
         trace.append(ResolutionEvent(source_name, "downloaded", f"published snapshot at {path}", str(path)))
         return path
+
+    def _fetch_mirror_manifest(
+        self,
+        base_url: str,
+        trace: list[ResolutionEvent],
+    ) -> dict[str, dict[str, Any]] | None:
+        """Read <base>/mirror-manifest.json, or None when the base has none."""
+
+        url = f"{base_url.rstrip('/')}/{MIRROR_MANIFEST_NAME}"
+        try:
+            with urlopen(  # noqa: S310 - fixed https URL taken from validated config
+                Request(url, headers={"User-Agent": "whisper-dictate/1"}),
+                timeout=self.request_timeout,
+            ) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            if exc.code == 404:
+                trace.append(
+                    ResolutionEvent("mirror", "absent", f"no {MIRROR_MANIFEST_NAME} at {_base_host(base_url)}")
+                )
+                return None
+            trace.append(
+                ResolutionEvent("mirror", "failed", f"mirror manifest request failed at {_base_host(base_url)}: {exc}")
+            )
+            return None
+        except (URLError, OSError, ValueError) as exc:
+            trace.append(
+                ResolutionEvent("mirror", "failed", f"mirror manifest request failed at {_base_host(base_url)}: {exc}")
+            )
+            return None
+        try:
+            return parse_mirror_manifest(payload)
+        except ManifestError as exc:
+            trace.append(ResolutionEvent("mirror", "invalid", str(exc)))
+            return None
+
+    def _download_file_from_parts(
+        self,
+        manifest: ModelManifest,
+        entry: Any,
+        spec: Mapping[str, Any],
+        destination: Path,
+        source_name: str,
+    ) -> None:
+        """Fetch every part, verify it, then assemble and verify the whole file."""
+
+        parts = list(spec["parts"])
+        if len(parts) == 1 and parts[0]["url"] == spec.get("url") and spec.get("url"):
+            # Single-URL file: the ordinary path already verifies size and hash.
+            self._download_file(manifest, spec["url"], destination, entry.name, source_name)
+            return
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        part_root = destination.parent / f".{destination.name}.parts"
+        if part_root.exists():
+            shutil.rmtree(part_root, ignore_errors=True)
+        part_root.mkdir(parents=True, exist_ok=True)
+        try:
+            with open(destination, "wb") as assembled:
+                for index, part in enumerate(parts):
+                    part_path = part_root / f"part-{index:04d}.bin"
+                    self._download_part(part, part_path, entry.name, index, source_name)
+                    with open(part_path, "rb") as handle:
+                        shutil.copyfileobj(handle, assembled, length=1024 * 1024)
+            verify_model_file(destination, entry)
+        finally:
+            shutil.rmtree(part_root, ignore_errors=True)
+
+    def _download_part(
+        self,
+        part: Mapping[str, Any],
+        destination: Path,
+        filename: str,
+        index: int,
+        source_name: str,
+    ) -> None:
+        last_error: Exception | None = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                atomic_download(
+                    part["url"],
+                    destination,
+                    downloader=self.downloader,
+                    timeout=self.request_timeout,
+                    download_hook=self._download_event_hook,
+                    atomic_replace=self.atomic_replace,
+                    attempt=attempt,
+                )
+                size = destination.stat().st_size
+                if size != part["size"]:
+                    raise ModelManagerError(
+                        f"part {index} of {filename} has {size} bytes, expected {part['size']}"
+                    )
+                digest = hashlib.sha256()
+                with open(destination, "rb") as handle:
+                    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                        digest.update(chunk)
+                if digest.hexdigest() != part["sha256"]:
+                    raise ModelManagerError(
+                        f"part {index} of {filename} failed its SHA-256 check"
+                    )
+                return
+            except Exception as exc:  # noqa: BLE001 - retry all downloader failures
+                last_error = exc
+                try:
+                    destination.unlink()
+                except OSError:
+                    pass
+                if attempt >= self.max_retries:
+                    break
+                time.sleep(min(self.max_backoff, self.backoff_factor * (2**attempt)))
+        raise ModelManagerError(
+            f"could not download part {index} of {filename} from {source_name} after "
+            f"{self.max_retries + 1} attempt(s): {last_error}"
+        )
 
     def _url_for_file(self, manifest: ModelManifest, base_url: str, filename: str) -> str:
         model_path = quote(manifest.model_id, safe="/")
@@ -1906,14 +2202,32 @@ class ModelManager:
         base_url: str,
         source_name: str,
         target: Path,
+        mirror_models: Mapping[str, Mapping[str, Any]] | None = None,
     ) -> Path:
         target.parent.mkdir(parents=True, exist_ok=True)
         stage = Path(tempfile.mkdtemp(prefix=f".{target.name}.", dir=str(target.parent)))
         try:
+            mirror_entry = (mirror_models or {}).get(manifest.model_id)
+            mirror_files = mirror_entry.get("files") if mirror_entry else None
+            if mirror_entry and mirror_entry.get("revision") not in (None, manifest.revision):
+                raise ManifestError(
+                    f"mirror manifest revision {mirror_entry.get('revision')!r} does not match the "
+                    f"pinned revision {manifest.revision!r}"
+                )
             for entry in manifest.required_files:
-                url = self._url_for_file(manifest, base_url, entry.name)
                 destination = stage / Path(entry.name)
                 destination.parent.mkdir(parents=True, exist_ok=True)
+                spec = (mirror_files or {}).get(entry.name)
+                if spec:
+                    if spec["size"] != entry.size or spec["sha256"] != entry.sha256:
+                        raise ManifestError(
+                            f"mirror manifest disagrees with the pinned manifest for {entry.name!r}"
+                        )
+                    self._download_file_from_parts(
+                        manifest, entry, spec, destination, source_name
+                    )
+                    continue
+                url = self._url_for_file(manifest, base_url, entry.name)
                 self._download_file(manifest, url, destination, entry.name, source_name)
             validate_snapshot(stage, manifest)
             marker = stage / ".whisper-dictate-manifest.json"

@@ -165,7 +165,79 @@ resulting directory with `local_files_only=True`, so loading a local/offline
 model cannot fall through to a network request.
 
 A cache can be either the normal Hugging Face cache root or a direct complete
-snapshot (`cache_path`).  A mirror URL can be a base URL (the resolver appends
+snapshot (`cache_path`).  ### Mirror bases are an ordered chain
+
+`mirror_urls` accepts one base or an ordered list. Each base is tried in turn;
+the first one that serves every pinned file wins, and Hugging Face is only
+reached when the whole chain fails. A base that cannot be reached is reported in
+the resolution trace by host, so a log shows *which* mirror went down:
+
+```text
+mirror  unavailable  mirror.example did not serve the pinned files; trying the next configured mirror
+mirror  downloaded   published snapshot at ...
+huggingface skipped   offline mode forbids network sources
+```
+
+Every base must be HTTPS, and a `mirror_url` in an older configuration is read
+as a one-entry chain, so nothing has to change to opt in.
+
+### Split-file mirrors
+
+Hosting services cap a single file well below the 2.4 GB weights, so a real
+fallback publishes parts. A base may serve `mirror-manifest.json`
+(`whisper-dictate.model-mirror.v1`) describing every model, its pinned revision,
+and, for each file, either one URL or an ordered list of parts:
+
+```json
+{
+  "schema": "whisper-dictate.model-mirror.v1",
+  "models": {
+    "nvidia/nemotron-speech-streaming-en-0.6b": {
+      "revision": "ebe59e5a817142986528bbbee5dba8db7b38ed50",
+      "files": {
+        "model.safetensors": {
+          "size": 2472413604,
+          "sha256": "bddd8a7300826efd19cf7e01f1c7db8402bed6786fc4c7739632894f69c71473",
+          "parts": [
+            {"name": "en--model-safetensors.part000", "size": 1500000000,
+             "sha256": "…", "url": "https://…/en--model-safetensors.part000"},
+            {"name": "en--model-safetensors.part001", "size": 972413604,
+             "sha256": "…", "url": "https://…/en--model-safetensors.part001"}
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+Rules the resolver enforces, all of them fail-closed:
+
+* the manifest schema must match exactly;
+* the revision must equal the pinned revision, and each file's `size`/`sha256`
+  must equal the pinned manifest's, so a mirror cannot quietly serve different
+  bytes for a pinned model;
+* every part URL must be HTTPS, part sizes must sum to the file size, and every
+  hash must be a full 64-character SHA-256;
+* each part is verified after download, the assembled file is verified again,
+  and nothing is published to the cache unless the final snapshot validates;
+* file names may not contain path separators, so a manifest cannot write outside
+  the staging directory.
+
+A base that serves no `mirror-manifest.json` is not an error: the resolver falls
+back to the Hugging Face-style URL layout for that base, which keeps a plain
+static mirror usable.
+
+### Startup prefetch
+
+The application prefetches every configured profile's files on startup in a
+background thread. It resolves (and therefore downloads) the pinned snapshot but
+does not build an engine, so the first dictation of a language never waits for a
+multi-gigabyte download, and only the default profile is loaded into memory.
+A failed prefetch is logged and otherwise ignored: the profile stays usable
+through the normal on-demand path.
+
+A mirror URL can be a base URL (the resolver appends
 `model_id/revision/filename`) or a template containing `{model_id}`,
 `{revision}`, and `{filename}`.  Only HTTPS is accepted.  The Hugging Face
 endpoint is pinned by the manifest revision and can be redirected for an
