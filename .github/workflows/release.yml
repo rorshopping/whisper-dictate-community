@@ -74,6 +74,32 @@ jobs:
             --release "${{ github.ref_name }}" `
             --download-base-url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}"
 
+      # The portable package is documented in packaging/README.md, so the CI
+      # archive must carry the same launcher and instructions that the release
+      # owner publishes. Without this step a CI-built ZIP would silently
+      # differ from the published portable artifact.
+      - name: Add portable launcher files
+        shell: pwsh
+        run: |
+          Copy-Item packaging/windows/WhisperDictate-Portable.cmd dist/WhisperDictate/
+          Copy-Item packaging/windows/PORTABLE.txt dist/WhisperDictate/
+          $archive = "WhisperDictate-${{ github.ref_name }}-windows-x64-portable.zip"
+          if (Test-Path $archive) { Remove-Item -Force $archive }
+          python scripts/release_guard.py dist/WhisperDictate
+          Compress-Archive -Path "dist/WhisperDictate/*" -DestinationPath $archive
+          python scripts/release_guard.py $archive
+          python -c "import sys,zipfile; names=set(zipfile.ZipFile(sys.argv[1]).namelist()); missing=[n for n in ('PORTABLE.txt','WhisperDictate-Portable.cmd') if n not in names]; sys.exit('portable archive missing '+str(missing)) if missing else print('portable archive carries its launcher and instructions')" $archive
+          python scripts/release_manifest.py $archive `
+            --output "WhisperDictate-${{ github.ref_name }}-windows-x64-portable.manifest.json" `
+            --checksums "WhisperDictate-${{ github.ref_name }}-windows-x64-portable.sha256" `
+            --release "${{ github.ref_name }}" `
+            --download-base-url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}"
+
+      - name: Generate SBOM from the built payload
+        run: |
+          python scripts/sbom_from_package.py dist/WhisperDictate `
+            -o "WhisperDictate-${{ github.ref_name }}-windows-x64.cdx.json"
+
       - name: Upload Windows release files
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -83,6 +109,10 @@ jobs:
             WhisperDictate-${{ github.ref_name }}-windows-x64.zip
             WhisperDictate-${{ github.ref_name }}-windows-x64.sha256
             WhisperDictate-${{ github.ref_name }}-windows-x64.manifest.json
+            WhisperDictate-${{ github.ref_name }}-windows-x64-portable.zip
+            WhisperDictate-${{ github.ref_name }}-windows-x64-portable.sha256
+            WhisperDictate-${{ github.ref_name }}-windows-x64-portable.manifest.json
+            WhisperDictate-${{ github.ref_name }}-windows-x64.cdx.json
 
   macos:
     name: Build macOS arm64 artifact
@@ -138,6 +168,11 @@ jobs:
             --release "${{ github.ref_name }}" \
             --download-base-url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}"
 
+      - name: Generate SBOM from the built payload
+        run: |
+          python scripts/sbom_from_package.py dist/WhisperDictate.app \
+            -o "WhisperDictate-${{ github.ref_name }}-macos-arm64.cdx.json"
+
       - name: Upload macOS release files
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -147,6 +182,7 @@ jobs:
             WhisperDictate-${{ github.ref_name }}-macos-arm64.zip
             WhisperDictate-${{ github.ref_name }}-macos-arm64.sha256
             WhisperDictate-${{ github.ref_name }}-macos-arm64.manifest.json
+            WhisperDictate-${{ github.ref_name }}-macos-arm64.cdx.json
 
   draft-release:
     name: Create draft release with checksums

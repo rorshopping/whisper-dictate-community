@@ -2,36 +2,66 @@
 
 This file contains licensing notices and the full license texts of the
 third-party Python packages that are distributed with **Whisper Dictate**.
-It was generated on **2026-09-20** from the license metadata and license
-files embedded in the installed wheel distributions
-(`.venv/Lib/site-packages/*.dist-info`).
+
+Two sources feed this file, and they are kept distinct on purpose:
+
+1. **Build environment** (versions below marked *env*) — read on
+   **2026-09-20** from the license metadata and license files embedded in the
+   installed wheel distributions (`.venv/Lib/site-packages/*.dist-info`).
+2. **Published artifact** — the exact versions below marked *(artifact)* were
+   read back out of the shipped `community-v0.1.0` archives with
+   `scripts/sbom_from_package.py`, which parses the `*.dist-info/METADATA`
+   that PyInstaller preserved inside each package. The generated inventories
+   are published next to the binaries as `sbom-macos-arm64.cdx.json` and
+   `sbom-windows-x64.cdx.json`.
+
+**Known limitation.** `rapidfuzz` and `ctranslate2` ship as compiled modules
+without their `dist-info` metadata, so the artifact cannot prove which patch
+version was bundled. Both are listed with their licenses below; the exact
+resolved build versions must be recorded here (or a future artifact must ship
+the metadata) before a stable release. Every other entry marked *(artifact)*
+is verified against the binary the release actually publishes.
 
 The Whisper Dictate application itself is licensed separately; see the
 `LICENSE` file in this repository.
 
 ## Summary
 
-| Package | Installed version | License (SPDX) | Homepage |
+| Package | Version | License (SPDX) | Homepage |
 |---|---|---|---|
-| faster-whisper | 1.2.1 | MIT | https://github.com/SYSTRAN/faster-whisper |
-| ctranslate2 | 4.8.1 | MIT | https://github.com/OpenNMT/CTranslate2 |
-| sounddevice | 0.5.5 | MIT | https://python-sounddevice.readthedocs.io |
-| numpy | 2.5.2 | BSD-3-Clause (bundle: BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0) | https://numpy.org |
-| pystray | 0.19.5 | LGPL-3.0 | https://github.com/moses-palmer/pystray |
-| pynput | 1.8.2 | LGPL-3.0 | https://github.com/moses-palmer/pynput |
-| pyperclip | 1.11.0 | BSD-3-Clause | https://github.com/asweigart/pyperclip |
-| Pillow | 12.3.0 | MIT-CMU | https://python-pillow.github.io |
-| torch | 2.14.0+cu126 | BSD-3-Clause (bundle: Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT) | https://pytorch.org |
-| transformers | 5.17.0 | Apache-2.0 | https://github.com/huggingface/transformers |
-| librosa | 1.0.0 | ISC | https://librosa.org |
-| nvidia-cublas-cu12 | 12.9.2.10 | NVIDIA proprietary (redistribution permitted) | https://developer.nvidia.com/cuda-zone |
-| nvidia-cuda-runtime-cu12 | 12.9.79 | NVIDIA proprietary (redistribution permitted) | https://developer.nvidia.com/cuda-zone |
-| nvidia-cudnn-cu12 | 9.24.0.43 | NVIDIA proprietary (redistribution permitted) | https://developer.nvidia.com/cuda-zone |
-| rapidfuzz | not installed | — | — |
+| faster-whisper | 1.2.1 *(env)* | MIT | https://github.com/SYSTRAN/faster-whisper |
+| ctranslate2 | 4.8.1 *(env)* | MIT | https://github.com/OpenNMT/CTranslate2 |
+| sounddevice | 0.5.5 *(env)* | MIT | https://python-sounddevice.readthedocs.io |
+| numpy | 2.5.3 *(artifact)* | BSD-3-Clause (bundle: BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0) | https://numpy.org |
+| pystray | 0.19.5 *(env)* | LGPL-3.0 | https://github.com/moses-palmer/pystray |
+| pynput | 1.8.2 *(env)* | LGPL-3.0 | https://github.com/moses-palmer/pynput |
+| pyperclip | 1.11.0 *(env)* | BSD-3-Clause | https://github.com/asweigart/pyperclip |
+| Pillow | 12.3.0 *(artifact)* | MIT-CMU | https://python-pillow.github.io |
+| torch | 2.14.0 *(artifact)* | BSD-3-Clause (bundle: Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND MIT) | https://pytorch.org |
+| transformers | 5.17.0 *(env)* | Apache-2.0 | https://github.com/huggingface/transformers |
+| librosa | 1.0.0 *(artifact)* | ISC | https://librosa.org |
+| nvidia-cublas-cu12 | 12.9.2.10 *(env)* | NVIDIA proprietary (redistribution permitted) | https://developer.nvidia.com/cuda-zone |
+| nvidia-cuda-runtime-cu12 | 12.9.79 *(env)* | NVIDIA proprietary (redistribution permitted) | https://developer.nvidia.com/cuda-zone |
+| nvidia-cudnn-cu12 | 9.24.0.43 *(env)* | NVIDIA proprietary (redistribution permitted) | https://developer.nvidia.com/cuda-zone |
+| rapidfuzz | bundled, version unverified *(artifact)* | MIT | https://github.com/rapidfuzz/RapidFuzz |
 
-`rapidfuzz` is not installed in this environment and is therefore not
-covered here. If it is added as a dependency later, its MIT license text
-must be appended to this file.
+### Packages also present in the published archives
+
+`av` 18.1.0 *(artifact, BSD-3-Clause)*, `click` 8.5.0 *(artifact, BSD-3-Clause)*,
+`filelock` 4.0.1 / 4.0.3 *(artifact, MIT)*, `huggingface_hub` 1.32.0 / 1.33.0
+*(artifact, Apache-2.0)*, `Jinja2` 3.1.6 *(artifact, BSD-3-Clause)*,
+`MarkupSafe` 3.0.3 *(artifact, BSD-3-Clause)*, `packaging` 26.3
+*(artifact, Apache-2.0 OR BSD-2-Clause)*, `protobuf` 7.36.2 *(artifact,
+BSD-3-Clause)*, `PyYAML` 6.0.3 *(artifact, MIT)*, `regex` 2026.9.10
+*(artifact, Apache-2.0 AND CNRI-Python)*, `rich` 15.0.0 *(artifact, MIT)*,
+`safetensors` 0.8.0 *(artifact, Apache-2.0)*, `scikit-learn` 1.9.1 *(artifact,
+BSD-3-Clause)*, `scipy` 1.18.1 *(artifact, BSD-3-Clause)*, `tokenizers` 0.23.2
+*(artifact, Apache-2.0)*, `tqdm` 4.70.1 *(artifact, MPL-2.0 AND MIT)*, `typer`
+0.27.2 *(artifact, MIT)*. Full per-package detail, including the license
+expression each wheel actually declared, is in the published
+`sbom-*.cdx.json` files. Where a version differs between the Windows and
+macOS archives, both are shown: the two platform builds were resolved
+separately.
 
 ---
 
@@ -5223,6 +5253,45 @@ This application is distributed with the CPython interpreter
   BSD-style license permitting redistribution in source and binary form.
   The full text is available at https://docs.python.org/3/license.html
   and ships with the interpreter.
+
+---
+
+## rapidfuzz
+
+Declared in `requirements-release.txt` (`rapidfuzz>=3.0`) as the optional fuzzy
+hotword accelerator and shipped in both published archives as compiled extension
+modules. The frozen payload keeps only the compiled modules, so the exact
+resolved build version is not recoverable from the artifact. The license below
+is version-independent (MIT) and is reproduced in full, as redistribution
+requires.
+
+- License: MIT (SPDX: MIT)
+- Homepage: https://github.com/rapidfuzz/RapidFuzz
+- Documentation: https://rapidfuzz.github.io/RapidFuzz/
+
+The MIT license text, as published by the RapidFuzz project:
+
+> Copyright (c) 2020-present Max Bachmann
+> Copyright (c) 2011 Adam Cohen
+>
+> Permission is hereby granted, free of charge, to any person obtaining
+> a copy of this software and associated documentation files (the
+> "Software"), to deal in the Software without restriction, including
+> without limitation the rights to use, copy, modify, merge, publish,
+> distribute, sublicense, and/or sell copies of the Software, and to
+> permit persons to whom the Software is furnished to do so, subject to
+> the following conditions:
+>
+> The above copyright notice and this permission notice shall be
+> included in all copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+> EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+> MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+> NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+> LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+> OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+> WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ---
 

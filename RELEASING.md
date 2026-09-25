@@ -23,12 +23,19 @@ not represented as model/application payload entries.
 Pushing a `v*` tag or manually dispatching the workflow:
 
 - runs tests and package guards;
-- builds Windows x64 and macOS arm64 archives;
+- builds Windows x64 and macOS arm64 archives, including a Windows portable
+  archive that carries `PORTABLE.txt` and `WhisperDictate-Portable.cmd`;
 - rejects logs, history, local files, secrets, model weights, and unsafe paths;
+- generates a CycloneDX SBOM from each built payload
+  (`scripts/sbom_from_package.py`) and fails loudly on packaging surprises;
 - generates SHA-256 files and machine-readable manifests;
 - attaches everything to a **draft** release.
 
 A human must inspect the artifacts, complete signing/notarization, publish the release, and then update the website manifest. Do not treat a successful unsigned build as a stable public release.
+
+Attach the SBOMs, `SHA256SUMS`, and the aggregate `release-manifest.json` to
+the published release as well, so a third party can verify what was
+redistributed without trusting this repository.
 
 ## Local checks
 
@@ -36,6 +43,7 @@ A human must inspect the artifacts, complete signing/notarization, publish the r
 python -m unittest discover -s tests -p "test_*.py" -v
 python scripts/release_guard.py dist/WhisperDictate
 python scripts/release_manifest.py <archive> --help
+python scripts/sbom_from_package.py dist/WhisperDictate -o sbom.cdx.json
 ```
 
 Never commit model weights, `.env` files, logs, transcription history, local vocabulary, signing keys, or API tokens.

@@ -217,10 +217,29 @@ store it with the release evidence.  The report must identify the Python
 version, platform, direct/transitive packages, and native wheels where they
 can affect the binary.
 
+`scripts/sbom_from_package.py` produces that report from the **artifact**
+instead of from the build machine, using only the standard library:
+
+```bash
+python scripts/sbom_from_package.py dist/WhisperDictate     -o sbom-windows.cdx.json
+python scripts/sbom_from_package.py dist/WhisperDictate.app -o sbom-macos.cdx.json
+python scripts/sbom_from_package.py release/archive.zip    -o sbom-archive.cdx.json
+```
+
+It reads every `*.dist-info/METADATA` that PyInstaller kept inside the frozen
+payload and records the exact version and declared license expression of every
+redistributed package.  Packages that ship as compiled modules *without*
+metadata (`rapidfuzz` and `ctranslate2` today) are reported explicitly as
+unresolved rather than dropped: the script prints a warning and the document
+carries a `whisper-dictate:unresolved-bundled-packages` property.  Resolve
+those versions in `THIRD-PARTY-NOTICES.md`, or make the build collect their
+metadata, before a stable release.
+
 Also review and attach/update:
 
 - `THIRD-PARTY-NOTICES.md` for redistributed packages and other bundled
-  third-party material;
+  third-party material.  A test fails the build when a package declared in
+  `requirements-release.txt` has no notice in that file;
 - the licenses for the PyInstaller bootloader/bundled runtime components;
 - the model-license notices and model download terms; and
 - any signing/notarization notices required by the distribution channel.

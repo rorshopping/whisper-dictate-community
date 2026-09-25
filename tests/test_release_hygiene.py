@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -18,8 +19,107 @@ from scripts.release_manifest import (
     build_manifest,
     write_release_files,
 )
+from scripts.sbom_from_package import ArtifactReader, build_sbom, collect
 
 ROOT = Path(__file__).resolve().parents[1]
+
+METADATA = """Metadata-Version: 2.4
+Name: {name}
+Version: {version}
+License-Expression: {license}
+Classifier: License :: OSI Approved :: MIT License
+
+Bundled for the test.
+"""
+
+
+def write_fake_artifact(directory: Path) -> Path:
+    """Build a small stand-in payload with and without metadata."""
+    payload = directory / "WhisperDictate.app" / "Contents" / "Resources"
+    payload.mkdir(parents=True)
+    (payload / "numpy-2.5.3.dist-info").mkdir()
+    (payload / "numpy-2.5.3.dist-info" / "METADATA").write_text(
+        METADATA.format(name="numpy", version="2.5.3", license="BSD-3-Clause"),
+        encoding="utf-8",
+    )
+    (payload / "numpy-2.5.3.dist-info" / "licenses").mkdir()
+    (payload / "numpy-2.5.3.dist-info" / "licenses" / "LICENSE.txt").write_text("BSD", encoding="utf-8")
+    (payload / "rapidfuzz").mkdir()
+    (payload / "rapidfuzz" / "fuzz_cpp.pyd").write_bytes(b"\x00\x01")
+    return directory / "WhisperDictate.app"
+
+
+class SbomFromPackageTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        self.addCleanup(self._tmp.cleanup)
+
+    def test_reads_versions_and_licenses_from_an_unpacked_payload(self):
+        app = write_fake_artifact(self.root)
+        with ArtifactReader(app) as reader:
+            packages, unresolved = collect(reader)
+        self.assertEqual([(p["name"], p["version"]) for p in packages], [("numpy", "2.5.3")])
+        self.assertEqual(packages[0]["spdx"], "BSD-3-Clause")
+        self.assertTrue(packages[0]["has_license_files"])
+        self.assertEqual(unresolved, ["rapidfuzz"])
+
+    def test_reads_the_same_metadata_from_a_zip_archive(self):
+        app = write_fake_artifact(self.root)
+        archive = self.root / "payload.zip"
+        with zipfile.ZipFile(archive, "w") as handle:
+            for path in sorted(app.rglob("*")):
+                if path.is_file():
+                    handle.write(path, path.relative_to(app).as_posix())
+        with ArtifactReader(archive) as reader:
+            packages, unresolved = collect(reader)
+        self.assertEqual(packages[0]["version"], "2.5.3")
+        self.assertEqual(unresolved, ["rapidfuzz"])
+
+    def test_document_is_cyclonedx_and_names_unresolved_packages(self):
+        app = write_fake_artifact(self.root)
+        with ArtifactReader(app) as reader:
+            packages, unresolved = collect(reader)
+        document = build_sbom(app, packages, unresolved, None)
+        self.assertEqual(document["bomFormat"], "CycloneDX")
+        self.assertEqual(document["specVersion"], "1.5")
+        self.assertEqual(document["components"][0]["purl"], "pkg:pypi/numpy@2.5.3")
+        self.assertEqual(document["components"][0]["licenses"], [{"license": {"id": "BSD-3-Clause"}}])
+        unresolved_property = next(
+            item
+            for item in document["properties"]
+            if item["name"] == "whisper-dictate:unresolved-bundled-packages"
+        )
+        self.assertEqual(unresolved_property["value"], "rapidfuzz")
+
+    def test_cli_writes_json_and_reports_components(self):
+        app = write_fake_artifact(self.root)
+        output = self.root / "sbom.json"
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/sbom_from_package.py"), str(app), "-o", str(output)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stdout + result.stderr)
+        document = json.loads(output.read_text(encoding="utf-8"))
+        self.assertEqual(len(document["components"]), 1)
+        self.assertIn("unresolved bundled packages", result.stderr)
+
+    def test_cli_fails_when_no_metadata_is_present(self):
+        payload = self.root / "empty"
+        payload.mkdir()
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/sbom_from_package.py"), str(payload)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("no *.dist-info metadata", result.stderr)
+
 
 
 class ArchiveDenylistTests(unittest.TestCase):
@@ -204,6 +304,29 @@ class WorkflowSanityTests(unittest.TestCase):
         self.assertIn("-r requirements.txt", requirements)
         self.assertIn("pyinstaller", requirements)
         self.assertIn("rapidfuzz", requirements)
+
+    def test_every_release_dependency_has_a_license_notice(self):
+        """A package that ships in the archive must ship its license text."""
+        requirements = (ROOT / "requirements-release.txt").read_text(encoding="utf-8")
+        notices = (ROOT / "THIRD-PARTY-NOTICES.md").read_text(encoding="utf-8")
+        missing = []
+        for line in requirements.splitlines():
+            line = line.strip()
+            if not line or line.startswith(("#", "-r")):
+                continue
+            package = re.split(r"[<>=!~\[; ]", line, maxsplit=1)[0].strip()
+            if not package:
+                continue
+            if package.lower() not in notices.lower():
+                missing.append(package)
+        self.assertEqual(missing, [], f"no license notice for: {missing}")
+
+    def test_third_party_notices_cover_the_accelerator_shipped_in_the_release(self):
+        """rapidfuzz ships as a compiled module, so it must be listed as MIT."""
+        notices = (ROOT / "THIRD-PARTY-NOTICES.md").read_text(encoding="utf-8")
+        self.assertIn("rapidfuzz", notices)
+        self.assertIn("Max Bachmann", notices)
+        self.assertNotIn("rapidfuzz | not installed", notices)
 
     def test_gitignore_covers_private_release_inputs(self):
         ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
