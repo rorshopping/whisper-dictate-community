@@ -160,8 +160,8 @@
     },
     {
       "path": "config.json",
-      "sha256": "b2546ff43b1e4c06236a8e05e75d2c77cbdbabc8493726d46ec191dcf23ba358",
-      "size": 1889,
+      "sha256": "7a2b82ecfbfd1d393c6d41997453fb458b1a8997fe69bd4336f57b598b24621a",
+      "size": 1958,
       "transform": "community-config"
     },
     {

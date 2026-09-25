@@ -16,7 +16,7 @@
     "cache_dir": "~/.cache/huggingface/hub",
     "mirror_url": null,
     "mirror_urls": [
-      "https://hf-mirror.com"
+      "https://github.com/rorshopping/whisper-dictate-community/releases/download/model-mirror-v1"
     ],
     "source_order": [
       "local",
