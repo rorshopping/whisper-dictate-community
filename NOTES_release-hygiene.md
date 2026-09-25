@@ -226,6 +226,10 @@ python scripts/sbom_from_package.py dist/WhisperDictate.app -o sbom-macos.cdx.js
 python scripts/sbom_from_package.py release/archive.zip    -o sbom-archive.cdx.json
 ```
 
+A macOS disk image is the one artifact this cannot describe from the inside.
+It is gated by a macOS-produced record instead - see `packaging/macos/verify_dmg.sh`
+and the `--dmg-evidence` guard option - and the record travels with the release.
+
 It reads every `*.dist-info/METADATA` that PyInstaller kept inside the frozen
 payload and records the exact version and declared license expression of every
 redistributed package.  Packages that ship as compiled modules *without*

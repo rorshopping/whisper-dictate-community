@@ -20,6 +20,7 @@ path, unsafe archive path, missing input, or unsupported archive is found.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -285,6 +286,84 @@ def _archive_names(path: Path) -> Iterator[str]:
     raise ValueError(f"unsupported archive format: {path}")
 
 
+DMG_VERIFICATION_SCHEMA = "whisper-dictate.dmg-verification.v1"
+DMG_REQUIRED_CHECKS = (
+    "hdiutil-verify",
+    "codesign-deep-strict",
+    "stapler-app",
+    "spctl-app",
+    "spctl-image",
+    "doctor-smoke",
+)
+_DMG_HASH_CHUNK = 8 * 1024 * 1024
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(_DMG_HASH_CHUNK), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def inspect_dmg(path: Path, evidence: Path | None) -> list[tuple[str, str]]:
+    """Verify a disk image against a macOS verification record.
+
+    Returns violations; an empty list means the image was verified on macOS and
+    the bytes still match that record.
+    """
+
+    if evidence is None:
+        return [
+            (
+                str(path),
+                "disk image needs macOS verification: run packaging/macos/verify_dmg.sh "
+                "and pass --dmg-evidence <record.json>",
+            )
+        ]
+    if not evidence.is_file():
+        return [(str(evidence), "missing disk-image verification record")]
+    try:
+        record = json.loads(evidence.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [(str(evidence), f"unreadable disk-image verification record: {exc}")]
+
+    violations: list[tuple[str, str]] = []
+    if not isinstance(record, dict) or record.get("schema") != DMG_VERIFICATION_SCHEMA:
+        return [(str(evidence), f"record schema must be {DMG_VERIFICATION_SCHEMA!r}")]
+    if record.get("passed") is not True:
+        violations.append((str(evidence), "record does not report an overall pass"))
+    checks = record.get("checks")
+    if not isinstance(checks, list):
+        violations.append((str(evidence), "record has no checks array"))
+    else:
+        passed = {
+            entry.get("name")
+            for entry in checks
+            if isinstance(entry, dict) and entry.get("passed") is True
+        }
+        for required in DMG_REQUIRED_CHECKS:
+            if required not in passed:
+                violations.append((str(evidence), f"record is missing a passed {required!r} check"))
+    if record.get("image") != path.name:
+        violations.append((str(evidence), f"record names {record.get('image')!r}, not {path.name!r}"))
+    try:
+        size = path.stat().st_size
+    except OSError as exc:
+        return [(str(path), f"missing disk image ({exc})")]
+    if record.get("size_bytes") != size:
+        violations.append((str(path), f"size {size} does not match the verified {record.get('size_bytes')}"))
+    try:
+        digest = sha256_file(path)
+    except OSError as exc:
+        return [(str(path), f"could not hash the disk image: {exc}")]
+    if record.get("sha256") != digest:
+        violations.append(
+            (str(path), "SHA-256 does not match the macOS verification record; the image changed after it was checked")
+        )
+    return _unique_violations(violations)
+
+
 def inspect_archive(path: str | os.PathLike[str]) -> list[tuple[str, str]]:
     """Inspect archive member names and return deterministic violations."""
 
@@ -330,10 +409,12 @@ def inspect_package(path: str | os.PathLike[str]) -> list[tuple[str, str]]:
         return [(str(package_path), f"could not inspect package: {exc}")]
 
 
-def inspect(path: str | os.PathLike[str]) -> list[tuple[str, str]]:
+def inspect(path: str | os.PathLike[str], dmg_evidence: Path | None = None) -> list[tuple[str, str]]:
     """Inspect either a release archive or a package directory."""
 
     target = Path(path)
+    if target.suffix.lower() == ".dmg":
+        return inspect_dmg(target, dmg_evidence)
     if target.is_dir():
         return inspect_package(target)
     return inspect_archive(target)
@@ -359,11 +440,19 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="emit a machine-readable report instead of human-readable failures",
     )
+    parser.add_argument(
+        "--dmg-evidence",
+        type=Path,
+        help=(
+            "macOS verification record for disk images, produced by "
+            "packaging/macos/verify_dmg.sh"
+        ),
+    )
     args = parser.parse_args(argv)
 
     all_violations: list[tuple[str, str]] = []
     for path in args.paths:
-        all_violations.extend(inspect(path))
+        all_violations.extend(inspect(path, args.dmg_evidence))
     violations = _unique_violations(all_violations)
     report = _json_report(args.paths, violations)
 
