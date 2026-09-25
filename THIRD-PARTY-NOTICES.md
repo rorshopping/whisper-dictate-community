@@ -45,6 +45,16 @@ The Whisper Dictate application itself is licensed separately; see the
 | nvidia-cudnn-cu12 | 9.24.0.43 *(env)* | NVIDIA proprietary (redistribution permitted) | https://developer.nvidia.com/cuda-zone |
 | rapidfuzz | bundled, version unverified *(artifact)* | MIT | https://github.com/rapidfuzz/RapidFuzz |
 
+### Not redistributed in the published archives
+
+The `nvidia-cublas-cu12`, `nvidia-cuda-runtime-cu12`, and `nvidia-cudnn-cu12`
+rows describe packages that were present in the *build environment*. Neither
+published archive contains a CUDA runtime: the Windows artifact bundles
+`torch.dll`/`c10.dll` from a CPU-only PyTorch build and the frozen doctor
+reports `torch 2.14.0+cpu` with CUDA unavailable, so these NVIDIA libraries are
+not redistributed by this release and their notices are retained only as
+build-environment provenance. See `sbom-*.cdx.json` for the packages that the
+archives actually carry.
 ### Packages also present in the published archives
 
 `av` 18.1.0 *(artifact, BSD-3-Clause)*, `click` 8.5.0 *(artifact, BSD-3-Clause)*,
