@@ -141,7 +141,25 @@ An explicit local snapshot can be put in the existing profile `model` field
 `local_model_path` to the resolver.  A `model_id` can accompany that path when
 using a custom manifest.  An explicit local path is strict: if it is absent,
 partial, or corrupt, the error explains what failed instead of quietly moving
-to a different source.  In offline mode, only local and complete cache
+to a different source.  #### Library-level offline is stricter than the application
+
+`ModelManager.from_config()` honours `offline` literally: when it is true the
+manager considers only a local snapshot and a complete cache, and raises
+`OfflineModelUnavailableError` instead of reaching for a mirror or Hugging
+Face.  The shipped `config.json` sets `offline: true`, so a library consumer
+that builds a manager straight from that file will **not** perform the
+first-use download.
+
+The application does not behave that way.  `main._offline_for_profile()` turns
+`offline` off for a profile whose models are not cached yet, so the first run
+downloads through the pinned Hugging Face revision and only then behaves
+strictly offline.  This is deliberate for both layers - the library stays
+predictable for tooling, the app stays usable on a clean machine - but the
+divergence surprises anyone reusing the resolver directly (packaging scripts,
+doctor tooling, third-party front-ends).  If you need the application behavior,
+build the manager from a config with `offline: false` and pass the resolved
+cache directory, rather than relying on the top-level `offline` key.
+In offline mode, only local and complete cache
 snapshots are considered.  The Transformers engine always receives the
 resulting directory with `local_files_only=True`, so loading a local/offline
 model cannot fall through to a network request.
