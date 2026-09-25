@@ -12,6 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGING = ROOT / "packaging"
 WINDOWS_SCRIPT = PACKAGING / "windows" / "WhisperDictate.iss"
+WINDOWS_PORTABLE_LAUNCHER = PACKAGING / "windows" / "WhisperDictate-Portable.cmd"
+WINDOWS_PORTABLE_README = PACKAGING / "windows" / "PORTABLE.txt"
 MACOS_SCRIPT = PACKAGING / "macos" / "build_signed_dmg.sh"
 PACKAGING_README = PACKAGING / "README.md"
 
@@ -72,6 +74,15 @@ class WindowsTemplateTests(unittest.TestCase):
         ):
             with self.subTest(resource=resource):
                 self.assertTrue((ROOT / resource).is_file())
+
+    def test_windows_portable_launcher_and_instructions_are_present(self):
+        launcher = read(WINDOWS_PORTABLE_LAUNCHER)
+        instructions = read(WINDOWS_PORTABLE_README)
+        self.assertIn("WhisperDictate.exe", launcher)
+        self.assertIn("--portable", launcher)
+        self.assertIn("PortableData", instructions)
+        self.assertIn("unsigned", instructions.lower())
+        self.assertNotIn("URLDownload", instructions)
 
     def test_payload_source_has_no_install_time_model_source(self):
         # The Files section may only consume the prepared onedir payload; it

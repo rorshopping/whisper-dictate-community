@@ -30,6 +30,16 @@ frozen application payload as the installers. A portable artifact does not
 create an uninstaller; the Windows installer adds only the per-user
 installation/shortcut/uninstaller wrapper around the identical payload.
 
+### Windows portable package
+
+[`windows/WhisperDictate-Portable.cmd`](windows/WhisperDictate-Portable.cmd)
+and [`windows/PORTABLE.txt`](windows/PORTABLE.txt) are copied into the root of
+the Windows portable ZIP. The launcher passes `--portable`, so configuration,
+logs, history, and model cache data are kept beside the executable when the
+folder is writable. These files do not download a model and do not add an
+installer, service, shortcut, or registry entry. The Windows preview remains
+explicitly unsigned until an Authenticode release gate is available.
+
 ## Windows installer
 
 [`windows/WhisperDictate.iss`](windows/WhisperDictate.iss) is an Inno Setup

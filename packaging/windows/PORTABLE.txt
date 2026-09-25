@@ -1,0 +1,29 @@
+Whisper Dictate Community Edition — Windows portable package
+
+This folder is a portable build. It does not install an application, create an uninstaller, or require administrator rights.
+
+Quick start
+1. Extract the ZIP to a writable folder.
+2. Double-click WhisperDictate-Portable.cmd, or run:
+   WhisperDictate.exe --portable
+3. Grant microphone, keyboard, and accessibility permissions when Windows asks.
+
+Portable data
+The launcher enables portable mode explicitly. The application stores its
+configuration, logs, history, and downloaded model cache below PortableData next
+to the executable. Create that directory yourself if you want the location to
+be obvious before the first run. A writable folder is required; a read-only
+location falls back to the per-user application data directory.
+
+Models
+Model weights are not included in this archive. The English and German models
+are downloaded on first use under their publisher licenses and can be several
+gigabytes. After a verified model is cached, transcription is local.
+
+Signing status
+This Windows preview is intentionally unsigned because no Authenticode
+certificate is configured. Windows SmartScreen may warn you. Verify the
+SHA-256 checksum published with the release before running it.
+
+Source and license
+https://github.com/rorshopping/whisper-dictate-community
