@@ -18,8 +18,7 @@ import threading
 import unittest
 from pathlib import Path
 
-ROOT = Path(r"C:\Users\Richard\AppData\Local\Temp\opencode\whisper-dictate-community-repo")
-sys.path.insert(0, str(ROOT))
+ROOT = Path(__file__).resolve().parents[1]
 
 from model_manager import (  # noqa: E402
     ManifestError,

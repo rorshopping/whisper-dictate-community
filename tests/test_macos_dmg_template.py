@@ -12,7 +12,7 @@ import re
 import unittest
 from pathlib import Path
 
-ROOT = Path(r"C:\Users\Richard\AppData\Local\Temp\opencode\whisper-dictate-community-repo")
+ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "packaging" / "macos" / "build_signed_dmg.sh"
 
 
